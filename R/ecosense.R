@@ -21,18 +21,24 @@
 #'@return Returns an Rsim.scenario object that can be supplied to the rsim.run function.
 #'@useDynLib Rpath
 #' @export
-rsim.sense <- function(Rpath.scenario, Rpath, Rpath.params){
-   
-  orig.params  <- Rpath.scenario$params
-  sense.params <- Rpath.scenario$params
-
-  nliving <- orig.params$NUM_LIVING
-  ndead   <- orig.params$NUM_DEAD
-  ngears  <- orig.params$NUM_GEARS
-  ngroups <- orig.params$NUM_GROUPS
+rsim.sense <- function(Rpath.scenario, Rpath, Rpath.params, 
+                       Vvary=c(-4.5,4.5), Dvary=c(0,0)){
  
-  # Set-up pedigree vectors, including zeroes for gear groups.
-  # THIS SHOULD BE THE ONLY USE OF THE Rpath.params object - do all extractions here
+  # A "read only" version of the input params, for reference  
+    orig.params  <- Rpath.scenario$params
+
+  # The output params, initialized as copy of input params
+    sense.params <- Rpath.scenario$params
+
+  # handy numbers
+    nliving <- orig.params$NUM_LIVING
+    ndead   <- orig.params$NUM_DEAD
+    ngears  <- orig.params$NUM_GEARS
+    ngroups <- orig.params$NUM_GROUPS
+
+  # HERE SHOULD BE THE ONLY USE OF THE Rpath.params object - 
+  # do all extractions from Rpath.params in this section 
+  # Pedigree vectors, including zeroes for gear groups.
     BBVAR	<- c(as.numeric(unlist(Rpath.params$pedigree[,2])),rep(0,ngears))
     PBVAR	<- c(as.numeric(unlist(Rpath.params$pedigree[,3])),rep(0,ngears))
     QBVAR	<- c(as.numeric(unlist(Rpath.params$pedigree[,4])),rep(0,ngears))
@@ -45,7 +51,8 @@ rsim.sense <- function(Rpath.scenario, Rpath, Rpath.params){
   # (generating an extra number would break the random seed setting alignment)
     IND <- 2:(ngroups+1)
 
-  # Biomass (the most straightforward)
+  # Biomass (the most straightforward).  VARiance is broken out so runif can
+  # easily be replaced by other standard distributions.
     ranBB <- orig.params$B_BaseRef[IND]  * (1 + BBVAR*runif(ngroups,-1.0,1.0))
 
   # PB, QB, Mzero, and the dependent respiration fractions
@@ -61,7 +68,7 @@ rsim.sense <- function(Rpath.scenario, Rpath, Rpath.params){
     # Active respiration is proportion of CONSUMPTION that goes to "heat"
     # Passive respiration/ VonB adjustment is left out here
     # Switched ranQB>0 test to TYPE test as QB for prim prods isn't 0 in rsim
-    # TODO Fix negative respiration rates?
+# TODO Fix negative respiration rates?
     ranActive <- 1.0 - (ranPB/ranQB) - orig.params$UnassimRespFrac[IND]
 
   # Now copy these the output scenario, prepending the "Outside" values
@@ -76,15 +83,12 @@ rsim.sense <- function(Rpath.scenario, Rpath, Rpath.params){
     sense.params$NoIntegrate <- 
       ifelse(sense.params$MzeroMort*sense.params$B_BaseRef > 24, 0, sense.params$spnum)
   
-  # TODO IMPORTANT - confirm that NoIntegrate gets switched appropriately for stanzas?
+# TODO IMPORTANT - confirm that NoIntegrate gets switched appropriately for stanzas?
 
-  # Version of new QB without "Outside" group 
+  # Version of new QB without "Outside" group, used later 
     QBOpt <- sense.params$FtimeQBOpt[IND]
 
-  #primary production links
-  primTo   <- ifelse(Rpath$type > 0 & Rpath$type <= 1, 
-                     1:length(ranPB),
-                     0)
+  primTo   <- ifelse(TYPE > 0 & TYPE <= 1, 1:length(ranPB), 0)
   primFrom <- rep(0, length(Rpath$PB))
   primQ    <- ranPB * ranBB 
 
@@ -129,80 +133,95 @@ rsim.sense <- function(Rpath.scenario, Rpath, Rpath.params){
   DCBB <- ranBB[sense.params$PreyTo]  
   sense.params$QQ <- DCnorm * DCQB * DCBB             	
    
-  numpredprey <- length(sense.params$QQ)
-
   # Sarah used the following formula to vary vulnerability in Gaichas et al. (2012)
   # That paper states that "vulnerability" (also known as X*predprey) has an
   # effective range from 1.01 to 91 in EwE.
-  sense.params$VV	<-	1 + exp(9 * (runif(length(sense.params$QQ))-0.5))
-  sense.params$DD	<-	1000 + exp(0 * (runif(length(sense.params$QQ))-0.5))
+  # KYA 12/30/19: changed to allow specification of V range and D range
+  # by user (in log space deviations from original) 
+  # Note the old version of this set DD to 1001, not 1000 (minor bug)  
+    NPP   <- length(sense.params$QQ)
+    log.v <- log(orig.params$VV - 1) 
+    log.d <- log(orig.params$DD - 1) 
+    sense.params$VV	<-	1 + exp(runif(NPP, log.v+Vvary[1], log.v+Vvary[2]))
+    sense.params$DD	<-	1 + exp(runif(NPP, log.d+Dvary[1], log.d+Dvary[2]))
 
   # Scramble combined prey pools
-  Btmp <- sense.params$B_BaseRef
-  py   <- sense.params$PreyFrom + 1.0
-  pd   <- sense.params$PreyTo + 1.0
-  VV   <- sense.params$VV * sense.params$QQ / Btmp[py]
-  AA   <- (2.0 * sense.params$QQ * VV) / (VV * Btmp[pd] * Btmp[py] - sense.params$QQ * Btmp[pd])
-  sense.params$PredPredWeight <- AA * Btmp[pd] 
-  sense.params$PreyPreyWeight <- AA * Btmp[py] 
+  # KYA 12/30/19 nothing to change in this section that I found - all of
+  # this recalculation is needed to set based on new QQ and VV values
+    Btmp <- sense.params$B_BaseRef
+    py   <- sense.params$PreyFrom + 1.0
+    pd   <- sense.params$PreyTo + 1.0
+    VV   <- sense.params$VV * sense.params$QQ / Btmp[py]
+    AA   <- (2.0 * sense.params$QQ * VV) / (VV * Btmp[pd] * Btmp[py] - sense.params$QQ * Btmp[pd])
+    sense.params$PredPredWeight <- AA * Btmp[pd] 
+    sense.params$PreyPreyWeight <- AA * Btmp[py] 
+    sense.params$PredTotWeight <- rep(0, length(sense.params$B_BaseRef))
+    sense.params$PreyTotWeight <- rep(0, length(sense.params$B_BaseRef))
+    for(links in 1:NPP){
+      sense.params$PredTotWeight[py[links]] <- sense.params$PredTotWeight[py[links]] + sense.params$PredPredWeight[links]
+      sense.params$PreyTotWeight[pd[links]] <- sense.params$PreyTotWeight[pd[links]] + sense.params$PreyPreyWeight[links]    
+    }  
+    sense.params$PredPredWeight <- sense.params$PredPredWeight/sense.params$PredTotWeight[py]
+    sense.params$PreyPreyWeight <- sense.params$PreyPreyWeight/sense.params$PreyTotWeight[pd]
+
+    #sense.params$PreyFrom       <- c(0, sense.params$PreyFrom)
+    #sense.params$PreyTo         <- c(0, sense.params$PreyTo)
+    sense.params$QQ             <- c(0, sense.params$QQ)
+    sense.params$DD             <- c(0, sense.params$DD)
+    sense.params$VV             <- c(0, sense.params$VV) 
+    sense.params$PredPredWeight <- c(0, sense.params$PredPredWeight)
+    sense.params$PreyPreyWeight <- c(0, sense.params$PreyPreyWeight)
+
+  # Fisheries Catch
+  # The Whitehouse et al. version didn't actualy vary catch,
+  # the only thing it does it renomalize FishQ.  Therefore only Q 
+  # calculation lines are needed.  Since Q is now calculated slightly
+  # differently (not from rpath) there are slight (10^-18) differences
+  # from the previous version.
+
+#TODO add catch uncertainty
+
+    CIND = orig.params$FishFrom + 1
+    sense.params$FishQ <- orig.params$FishQ * 
+                          orig.params$B_BaseRef[CIND]/sense.params$B_BaseRef[CIND] 
+
+  # fishfrom    <- row(as.matrix(Rpath$Catch))
+  # fishthrough <- col(as.matrix(Rpath$Catch)) + (nliving + ndead)
+  # fishcatch   <- Rpath$Catch
+  # fishto      <- fishfrom * 0
   
-  sense.params$PredTotWeight <- rep(0, length(sense.params$B_BaseRef))
-  sense.params$PreyTotWeight <- rep(0, length(sense.params$B_BaseRef))
-  
-  for(links in 1:numpredprey){
-    sense.params$PredTotWeight[py[links]] <- sense.params$PredTotWeight[py[links]] + sense.params$PredPredWeight[links]
-    sense.params$PreyTotWeight[pd[links]] <- sense.params$PreyTotWeight[pd[links]] + sense.params$PreyPreyWeight[links]    
-  }  
+  # if(sum(fishcatch) > 0){
+    # sense.params$FishFrom    <- fishfrom   [fishcatch > 0]
+    # sense.params$FishThrough <- fishthrough[fishcatch > 0]
+    # sense.params$FishQ       <- fishcatch  [fishcatch > 0] / sense.params$B_BaseRef[sense.params$FishFrom + 1]  
+    # sense.params$FishTo      <- fishto     [fishcatch > 0]
+  # }
 
-  sense.params$PredPredWeight <- sense.params$PredPredWeight/sense.params$PredTotWeight[py]
-  sense.params$PreyPreyWeight <- sense.params$PreyPreyWeight/sense.params$PreyTotWeight[pd]
-
-  sense.params$PreyFrom       <- c(0, sense.params$PreyFrom)
-  sense.params$PreyTo         <- c(0, sense.params$PreyTo)
-  sense.params$QQ             <- c(0, sense.params$QQ)
-  sense.params$DD             <- c(0, sense.params$DD)
-  sense.params$VV             <- c(0, sense.params$VV) 
-  sense.params$PredPredWeight <- c(0, sense.params$PredPredWeight)
-  sense.params$PreyPreyWeight <- c(0, sense.params$PreyPreyWeight)
-
-
-  #catchlinks
-  fishfrom    <- row(as.matrix(Rpath$Catch))
-  fishthrough <- col(as.matrix(Rpath$Catch)) + (nliving + ndead)
-  fishcatch   <- Rpath$Catch
-  fishto      <- fishfrom * 0
-  
-  if(sum(fishcatch) > 0){
-    sense.params$FishFrom    <- fishfrom   [fishcatch > 0]
-    sense.params$FishThrough <- fishthrough[fishcatch > 0]
-    sense.params$FishQ       <- fishcatch  [fishcatch > 0] / sense.params$B_BaseRef[sense.params$FishFrom + 1]  
-    sense.params$FishTo      <- fishto     [fishcatch > 0]
-  }
-
+  # Detritus (DetFate) and detritus linkes are not varied
+  #
   #discard links
-  for(d in 1:Rpath$NUM_DEAD){
-    detfate <- Rpath$DetFate[(nliving + ndead + 1):Rpath$NUM_GROUPS, d]
-    detmat  <- t(matrix(detfate, Rpath$NUM_GEAR, Rpath$NUM_GROUPS))
-    
-    fishfrom    <-  row(as.matrix(Rpath$Discards))                      
-    fishthrough <-  col(as.matrix(Rpath$Discards)) + (nliving + ndead)
-    fishto      <-  t(matrix(nliving + d, Rpath$NUM_GEAR, Rpath$NUM_GROUPS))
-    fishcatch   <-  Rpath$Discards * detmat
-    if(sum(fishcatch) > 0){
-      sense.params$FishFrom    <- c(sense.params$FishFrom,    fishfrom   [fishcatch > 0])
-      sense.params$FishThrough <- c(sense.params$FishThrough, fishthrough[fishcatch > 0])
-      ffrom <- fishfrom[fishcatch > 0]
-      sense.params$FishQ       <- c(sense.params$FishQ,  fishcatch[fishcatch > 0] / sense.params$B_BaseRef[ffrom + 1])  
-      sense.params$FishTo      <- c(sense.params$FishTo, fishto   [fishcatch > 0])
-    }
-  } 
+  #for(d in 1:Rpath$NUM_DEAD){
+  #  detfate <- Rpath$DetFate[(nliving + ndead + 1):Rpath$NUM_GROUPS, d]
+  #  detmat  <- t(matrix(detfate, Rpath$NUM_GEAR, Rpath$NUM_GROUPS))
+  #  
+  #  fishfrom    <-  row(as.matrix(Rpath$Discards))                      
+  #  fishthrough <-  col(as.matrix(Rpath$Discards)) + (nliving + ndead)
+  #  fishto      <-  t(matrix(nliving + d, Rpath$NUM_GEAR, Rpath$NUM_GROUPS))
+  #  fishcatch   <-  Rpath$Discards * detmat
+  #  if(sum(fishcatch) > 0){
+  #    sense.params$FishFrom    <- c(sense.params$FishFrom,    fishfrom   [fishcatch > 0])
+  #    sense.params$FishThrough <- c(sense.params$FishThrough, fishthrough[fishcatch > 0])
+  #    ffrom <- fishfrom[fishcatch > 0]
+  #    sense.params$FishQ       <- c(sense.params$FishQ,  fishcatch[fishcatch > 0] / sense.params$B_BaseRef[ffrom + 1])  
+  #    sense.params$FishTo      <- c(sense.params$FishTo, fishto   [fishcatch > 0])
+  #  }
+  #} 
 
-  sense.params$FishFrom        <- c(0, sense.params$FishFrom)
-  sense.params$FishThrough     <- c(0, sense.params$FishThrough)
-  sense.params$FishQ           <- c(0, sense.params$FishQ)  
-  sense.params$FishTo          <- c(0, sense.params$FishTo)   
-
- 
+  #sense.params$FishFrom        <- c(0, sense.params$FishFrom)
+  #sense.params$FishThrough     <- c(0, sense.params$FishThrough)
+  #sense.params$FishTo          <- c(0, sense.params$FishTo) 
+  #sense.params$FishQ           <- c(0, sense.params$FishQ)  
+  
   class(sense.params) <- 'Rsim.params'
   return(sense.params)   
   

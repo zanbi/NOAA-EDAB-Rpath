@@ -22,6 +22,8 @@ par2 <- rsim.sense.path(scene, bal, unbal)
 set.seed(12345)
 par3 <- rsim.sense(scene, bal, unbal)	
 
+par3 <- rsim.sense(scene, bal, unbal, Vrange=c(-1,1))
+
 par_compare("B_BaseRef",par0,par2,par3)
 par_compare("PBopt",par0,par2,par3)
 par_compare("FtimeQBOpt",par0,par2,par3)
@@ -38,6 +40,13 @@ par_compare <- function(this, pb, p0, p1){
  dif  <- perturb - base; changed <- ifelse(perturb==base,F,T)
  return(data.frame(orig,base,perturb,dif,changed))
 }
+
+par_compare("PreyFrom",par0,par1)    # UNCHANGED
+par_compare("PreyTo",par0,par1)      # UNCHANGED
+par_compare("QQ",par0,par1)
+par_compare("DD",par0,par1)          # WEIRDLY CHANGED 1000 to 1001 also check first one
+par_compare("VV",par0,par2,par3)
+
 
 
 sp_pars <- c("B_BaseRef","MzeroMort","UnassimRespFrac","ActiveRespFrac",
@@ -64,9 +73,10 @@ par_compare("VV",par0,par1)
 par_compare("PredPredWeight",par0,par1)
 par_compare("PreyPreyWeight",par0,par1)
 
-par_compare("FishFrom",par0,par1)      # UNCHANGED
-par_compare("FishThrough",par0,par1)   # UNCHANGED
-par_compare("FishQ",par0,par1)
+par_compare("FishFrom",par0,par2,par3)      # UNCHANGED
+par_compare("FishTo",par0,par2,par3)      # UNCHANGED
+par_compare("FishThrough",par0,par2,par3)   # UNCHANGED
+par_compare("FishQ",par0,par2,par3)
 
 par_compare("DetFrom",par0,par1)       # UNCHANGED
 par_compare("DetTo",par0,par1)         # UNCHANGED
