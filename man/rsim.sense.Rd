@@ -4,13 +4,7 @@
 \alias{rsim.sense}
 \title{Ecosense function for rpath (rsim.sense.path)}
 \usage{
-rsim.sense(
-  Rpath.scenario,
-  Rpath,
-  Rpath.params,
-  Vvary = c(-4.5, 4.5),
-  Dvary = c(0, 0)
-)
+rsim.sense(Rpath.scenario, Rpath.params, Vvary = c(-4.5, 4.5), Dvary = c(0, 0))
 }
 \value{
 Returns an Rsim.scenario object that can be supplied to the rsim.run function.

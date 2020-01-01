@@ -21,7 +21,7 @@
 #'@return Returns an Rsim.scenario object that can be supplied to the rsim.run function.
 #'@useDynLib Rpath
 #' @export
-rsim.sense <- function(Rpath.scenario, Rpath, Rpath.params, 
+rsim.sense <- function(Rpath.scenario, Rpath.params, 
                        Vvary=c(-4.5,4.5), Dvary=c(0,0)){
  
   # A "read only" version of the input params, for reference  
@@ -79,59 +79,78 @@ rsim.sense <- function(Rpath.scenario, Rpath, Rpath.params,
     sense.params$MzeroMort      <- c(0.0, ifelse(TYPE==3, 0, ranM0))
     sense.params$ActiveRespFrac <- c(0.0, ifelse(TYPE<1 , ranActive, 0))
 
+  # Version of new QB saved without "Outside" group, used later 
+    QBOpt <- sense.params$FtimeQBOpt[IND]  
+
+# TODO IMPORTANT - confirm that NoIntegrate gets switched appropriately for stanzas?
   # No Integrate for A-B, fixing 2*steps_yr*steps_m as 24
     sense.params$NoIntegrate <- 
       ifelse(sense.params$MzeroMort*sense.params$B_BaseRef > 24, 0, sense.params$spnum)
   
-# TODO IMPORTANT - confirm that NoIntegrate gets switched appropriately for stanzas?
+  # KYA 12/31/19 - We don't need to recaculated predprey links, just Q(links)
+  # So this section can be deleted
+      #   primTo   <- ifelse(TYPE > 0 & TYPE <= 1, 1:length(ranPB), 0)
+      #   primFrom <- rep(0, length(Rpath$PB))
+      #   primQ    <- ranPB * ranBB 
 
-  # Version of new QB without "Outside" group, used later 
-    QBOpt <- sense.params$FtimeQBOpt[IND]
+      # Change production to consusmption for mixotrophs
+      #mixotrophs <- which(Rpath$type > 0 & Rpath$type < 1)
+      #primQ[mixotrophs] <- primQ[mixotrophs] / Rpath$GE[mixotrophs] * 
+      #        Rpath$type[mixotrophs]
 
-  primTo   <- ifelse(TYPE > 0 & TYPE <= 1, 1:length(ranPB), 0)
-  primFrom <- rep(0, length(Rpath$PB))
-  primQ    <- ranPB * ranBB 
-
-  # Change production to consusmption for mixotrophs
-  mixotrophs <- which(Rpath$type > 0 & Rpath$type < 1)
-  primQ[mixotrophs] <- primQ[mixotrophs] / Rpath$GE[mixotrophs] * 
-          Rpath$type[mixotrophs]
-
-  #Predator/prey links
-  preyfrom  <- row(Rpath$DC)
-  preyto    <- col(Rpath$DC)	
-  predpreyQ <- Rpath$DC[1:(nliving + ndead + 1), ] * 
-    t(matrix(QBOpt[1:Rpath$NUM_LIVING] * ranBB[1:Rpath$NUM_LIVING],
-            nliving, nliving + ndead + 1))
+      #Predator/prey links
+      #preyfrom  <- row(Rpath$DC)
+      #preyto    <- col(Rpath$DC)
+      # KYA 12/31/19 note if we need the below again, QBOpt index is off by 1	
+      #predpreyQ <- Rpath$DC[1:(nliving + ndead + 1), ] * 
+      #  t(matrix(QBOpt[1:Rpath$NUM_LIVING] * ranBB[1:Rpath$NUM_LIVING],
+      #          nliving, nliving + ndead + 1))
   
-  #combined
-  sense.params$PreyFrom <- c(primFrom[primTo > 0], preyfrom [predpreyQ > 0])
-  # Changed import prey number to 0
-  sense.params$PreyFrom[which(sense.params$PreyFrom == nrow(Rpath$DC))] <- 0
-  sense.params$PreyTo   <- c(primTo  [primTo > 0], preyto   [predpreyQ > 0])
+      #combined
+      #sense.params$PreyFrom <- c(primFrom[primTo > 0], preyfrom [predpreyQ > 0])
+      # Changed import prey number to 0
+      #sense.params$PreyFrom[which(sense.params$PreyFrom == nrow(Rpath$DC))] <- 0
+      #sense.params$PreyTo   <- c(primTo  [primTo > 0], preyto   [predpreyQ > 0])
   
   ##### This is where we add uncertainty to diet  #####
-  # Diet comp vector
-  DCvector <- c(rep(0.0, sum(Rpath$type==1)), Rpath$DC[Rpath$DC>0])
-  # Diet comp pedigree
-  DCpedigree <- DCVAR[sense.params$PreyTo]
-  ## Random diet comp
-  EPSILON <- 1*10^-8
-  betascale <- 1.0
-  DCbeta <- betascale * DCpedigree * DCpedigree
-  alpha <- DCvector/DCbeta
-  DClinks <- rgamma(length(DCvector), shape=alpha, rate=DCbeta)
-  DClinks2 <- ifelse(DClinks < EPSILON, 2 * EPSILON, DClinks)
-  # DClinks2 prevents random diet comps from becoming too low, effectively
-  # equal to zero. Zeros in DClinks will produce NaN's in sense.params$QQ, and
-  # others, ultimately preventing ecosim.
-  DCtot <- tapply(DClinks2, sense.params$PreyTo, "sum")    
-  # Normalized diet comp
-  DCnorm <- ifelse(Rpath$type[sense.params$PreyTo]==1, 1.0, DClinks2/DCtot[sense.params$PreyTo])
-  # The "if" part of DCnorm is so the DC of phytoplankton (type==1) won't equal zero
-  DCQB <- QBOpt[sense.params$PreyTo]
-  DCBB <- ranBB[sense.params$PreyTo]  
-  sense.params$QQ <- DCnorm * DCQB * DCBB             	
+  # Original version created this diet comp vector from Rpath$DC and
+  # recalculated all the links (i.e. PreyFrom, PreyTo).  
+  # KYA 12/31/19 new version calculates DC from QQ vector instead.
+
+    # Old Version got DC vector from Rpath like this:
+    #    DCvector <- c(rep(0.0, sum(Rpath$type==1)), Rpath$DC[Rpath$DC>0])
+    #
+    # For new version, first strip the Outside link off the predprey link lists
+    sp.PreyTo <- orig.params$PreyTo[2:(orig.params$NumPredPreyLinks+1)]
+    Qvector   <-     orig.params$QQ[2:(orig.params$NumPredPreyLinks+1)]
+    # Then convert to DC proportions based on Q summed by PreyTo groups
+    # We don't actually need to replace PP groups with 0 (using type) but 
+    # setting those to 0's means rgamma's aren't generated so the set.seed 
+    # alignment is off for comparisons with the old method unless we do this.
+    QDCvector <- ifelse(TYPE[sp.PreyTo]==1,0, 
+                 Qvector/tapply(Qvector, sp.PreyTo, "sum")[sp.PreyTo])
+    DCvector  <- QDCvector 
+    # KYA 12/31/19 the remainer of this section (drawing from a gamma that
+    # based on DC that is then normalized) is unchanged from previous version.
+    # Diet comp pedigree
+    DCpedigree <- DCVAR[sp.PreyTo]
+    ## Random diet comp
+    EPSILON <- 1*10^-8
+    betascale <- 1.0
+    DCbeta <- betascale * DCpedigree * DCpedigree
+    alpha <- DCvector/DCbeta
+    DClinks <- rgamma(length(DCvector), shape=alpha, rate=DCbeta)
+    DClinks2 <- ifelse(DClinks < EPSILON, 2 * EPSILON, DClinks)
+    # DClinks2 prevents random diet comps from becoming too low, effectively
+    # equal to zero. Zeros in DClinks will produce NaN's in sense.params$QQ, and
+    # others, ultimately preventing ecosim.
+    DCtot <- tapply(DClinks2, sp.PreyTo, "sum")    
+    # Normalized diet comp
+    DCnorm <- ifelse(TYPE[sp.PreyTo]==1, 1.0, DClinks2/DCtot[sp.PreyTo])
+    # The "if" part of DCnorm is so the DC of phytoplankton (type==1) won't equal zero
+    DCQB  <- QBOpt[sp.PreyTo]
+    DCBB  <- ranBB[sp.PreyTo]  
+    ranQQ <- DCnorm * DCQB * DCBB             	
    
   # Sarah used the following formula to vary vulnerability in Gaichas et al. (2012)
   # That paper states that "vulnerability" (also known as X*predprey) has an
@@ -166,7 +185,7 @@ rsim.sense <- function(Rpath.scenario, Rpath, Rpath.params,
 
     #sense.params$PreyFrom       <- c(0, sense.params$PreyFrom)
     #sense.params$PreyTo         <- c(0, sense.params$PreyTo)
-    sense.params$QQ             <- c(0, sense.params$QQ)
+    sense.params$QQ             <- c(0, ranQQ)
     sense.params$DD             <- c(0, sense.params$DD)
     sense.params$VV             <- c(0, sense.params$VV) 
     sense.params$PredPredWeight <- c(0, sense.params$PredPredWeight)
