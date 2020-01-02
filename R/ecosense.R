@@ -121,20 +121,25 @@ rsim.sense <- function(Rpath.scenario, Rpath.params,
     #    DCvector <- c(rep(0.0, sum(Rpath$type==1)), Rpath$DC[Rpath$DC>0])
     #
     # For new version, first strip the Outside link off the predprey link lists
-    sp.PreyTo <- orig.params$PreyTo[2:(orig.params$NumPredPreyLinks+1)]
-    Qvector   <-     orig.params$QQ[2:(orig.params$NumPredPreyLinks+1)]
+    PPIND <- 2:(orig.params$NumPredPreyLinks+1) 
+    sp.PreyTo <- orig.params$PreyTo[PPIND]
+    Qvector   <-     orig.params$QQ[PPIND]
     # Then convert to DC proportions based on Q summed by PreyTo groups
     # We don't actually need to replace PP groups with 0 (using type) but 
     # setting those to 0's means rgamma's aren't generated so the set.seed 
     # alignment is off for comparisons with the old method unless we do this.
+    # IMPORTANT:  The tapply method words for PreyTo (e.g. predators) because
+    # there is no predator group 0 - 0 breaks array lookups.  It doesn't work 
+    # for Prey - for prey, convert to character as in the preyprey loop below.
     QDCvector <- ifelse(TYPE[sp.PreyTo]==1,0, 
-                 Qvector/tapply(Qvector, sp.PreyTo, "sum")[sp.PreyTo])
+                 Qvector/(tapply(Qvector, sp.PreyTo, "sum")[sp.PreyTo]) )
     DCvector  <- QDCvector 
     # KYA 12/31/19 the remainer of this section (drawing from a gamma that
     # based on DC that is then normalized) is unchanged from previous version.
     # Diet comp pedigree
     DCpedigree <- DCVAR[sp.PreyTo]
     ## Random diet comp
+# TODO: shouldn't need EPSILON adjustment drawing this way - kept for matching old.
     EPSILON <- 1*10^-8
     betascale <- 1.0
     DCbeta <- betascale * DCpedigree * DCpedigree
@@ -158,38 +163,38 @@ rsim.sense <- function(Rpath.scenario, Rpath.params,
   # KYA 12/30/19: changed to allow specification of V range and D range
   # by user (in log space deviations from original) 
   # Note the old version of this set DD to 1001, not 1000 (minor bug)  
-    NPP   <- length(sense.params$QQ)
-    log.v <- log(orig.params$VV - 1) 
-    log.d <- log(orig.params$DD - 1) 
-    sense.params$VV	<-	1 + exp(runif(NPP, log.v+Vvary[1], log.v+Vvary[2]))
-    sense.params$DD	<-	1 + exp(runif(NPP, log.d+Dvary[1], log.d+Dvary[2]))
+    NPP    <-  length(PPIND)
+    log.v  <-  log(orig.params$VV[PPIND] - 1) 
+    log.d  <-  log(orig.params$DD[PPIND] - 1) 
+    ranVV  <-  1 + exp(runif(NPP, log.v+Vvary[1], log.v+Vvary[2]))
+    ranDD  <-  1 + exp(runif(NPP, log.d+Dvary[1], log.d+Dvary[2]))
 
   # Scramble combined prey pools
-  # KYA 12/30/19 nothing to change in this section that I found - all of
-  # this recalculation is needed to set based on new QQ and VV values
-    Btmp <- sense.params$B_BaseRef
-    py   <- sense.params$PreyFrom + 1.0
-    pd   <- sense.params$PreyTo + 1.0
-    VV   <- sense.params$VV * sense.params$QQ / Btmp[py]
-    AA   <- (2.0 * sense.params$QQ * VV) / (VV * Btmp[pd] * Btmp[py] - sense.params$QQ * Btmp[pd])
-    sense.params$PredPredWeight <- AA * Btmp[pd] 
-    sense.params$PreyPreyWeight <- AA * Btmp[py] 
-    sense.params$PredTotWeight <- rep(0, length(sense.params$B_BaseRef))
-    sense.params$PreyTotWeight <- rep(0, length(sense.params$B_BaseRef))
-    for(links in 1:NPP){
-      sense.params$PredTotWeight[py[links]] <- sense.params$PredTotWeight[py[links]] + sense.params$PredPredWeight[links]
-      sense.params$PreyTotWeight[pd[links]] <- sense.params$PreyTotWeight[pd[links]] + sense.params$PreyPreyWeight[links]    
-    }  
-    sense.params$PredPredWeight <- sense.params$PredPredWeight/sense.params$PredTotWeight[py]
-    sense.params$PreyPreyWeight <- sense.params$PreyPreyWeight/sense.params$PreyTotWeight[pd]
+  # KYA 12/30/19 PredTotWeight and PreyTotWeight are no longer exported in the
+  # creation of an Rsim scenario - so made local only.  Then changed to use
+  # tapply instead of a sum looper.
+  # IMPORTANT:  since 0 appears as an index for tapply (for prey=0), we need
+  # to convert the pred and prey indices to characters and use a character
+  # lookup to account for the 0.
+    namedBB <- c(1.0,ranBB); names(namedBB)<-0:ngroups
+    py   <- as.character(orig.params$PreyFrom[PPIND]) # + 1.0
+    pd   <- as.character(orig.params$PreyTo[PPIND])   # + 1.0
+    prey.BB <- namedBB[py]
+    pred.BB <- namedBB[pd]
+    VV   <- as.numeric(ranVV*ranQQ / prey.BB)
+    AA   <- as.numeric((2.0 * ranQQ * VV) / (VV*pred.BB*prey.BB - ranQQ*pred.BB))
+    ranPredPred <- as.numeric(AA * pred.BB)
+    ranPreyPrey <- as.numeric(AA * prey.BB)
+    ranPredPredWeight <- as.numeric(ranPredPred/(tapply(ranPredPred, py, "sum")[py]))
+    ranPreyPreyWeight <- as.numeric(ranPreyPrey/(tapply(ranPreyPrey, pd, "sum")[pd]))
 
     #sense.params$PreyFrom       <- c(0, sense.params$PreyFrom)
     #sense.params$PreyTo         <- c(0, sense.params$PreyTo)
     sense.params$QQ             <- c(0, ranQQ)
-    sense.params$DD             <- c(0, sense.params$DD)
-    sense.params$VV             <- c(0, sense.params$VV) 
-    sense.params$PredPredWeight <- c(0, sense.params$PredPredWeight)
-    sense.params$PreyPreyWeight <- c(0, sense.params$PreyPreyWeight)
+    sense.params$DD             <- c(0, ranDD)
+    sense.params$VV             <- c(0, ranVV) 
+    sense.params$PredPredWeight <- c(0, ranPredPredWeight)
+    sense.params$PreyPreyWeight <- c(0, ranPreyPreyWeight)
 
   # Fisheries Catch
   # The Whitehouse et al. version didn't actualy vary catch,

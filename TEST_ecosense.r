@@ -96,7 +96,33 @@ par_compare("DetFrac",par0,par1)       # UNCHANGED
 #[33] "DetFrom"          "DetTo"            "NumDetLinks"      "BURN_YEARS"      
 #[37] "COUPLED"          "RK4_STEPS"    
 
+set.seed(123)
 
+
+PPIND <- 2:(par0$NumPredPreyLinks+1) 
+IND   <- 2:(par0$NUM_GROUPS+1) 
+NPP    <-  length(PPIND)
+log.v  <-  log(par0$VV[PPIND] - 1) 
+#ranVV  <-  1 + exp(runif(NPP, log.v-4.5, log.v+4.5))
+ranVV  <-  1 + exp(runif(NPP, log.v-0, log.v+0))
+ranQQ  <-  par0$QQ[PPIND]
+ranBB  <-  par0$B_BaseRef[IND]
+
+namedBB <- c(1.0,ranBB); names(namedBB)<-0:par0$NUM_GROUPS
+py   <- as.character(par0$PreyFrom[PPIND]) # + 1.0
+pd   <- as.character(par0$PreyTo[PPIND])   # + 1.0
+prey.BB <- namedBB[py]
+pred.BB <- namedBB[pd]
+VV   <- as.numeric(ranVV*ranQQ / prey.BB)
+AA   <- as.numeric((2.0 * ranQQ * VV) / (VV*pred.BB*prey.BB - ranQQ*pred.BB))
+ranPredPred <- as.numeric(AA * pred.BB)
+ranPreyPrey <- as.numeric(AA * prey.BB)
+ranPredPredWeight <- as.numeric(ranPredPred/(tapply(ranPredPred, py, "sum")[py]))
+ranPreyPreyWeight <- as.numeric(ranPreyPrey/(tapply(ranPreyPrey, pd, "sum")[pd]))
+
+
+
+# TEST STUFF
 
 DCVAR     <- as.numeric(unlist(unbal$pedigree[,5])) 
 
@@ -135,7 +161,7 @@ DCQB <- QBOpt[sp.PreyTo]
 DCBB <- ranBB[sp.PreyTo]  
 sp.QQ <- DCnorm * DCQB * DCBB    
 
-al
+
 
 
 
