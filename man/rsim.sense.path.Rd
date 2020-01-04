@@ -18,16 +18,6 @@ Returns an Rsim.scenario object that can be supplied to the rsim.run function.
 \description{
 5 November 2019
 }
-\seealso{
-Other Rpath functions
-
-Whitehouse and Aydin (Submitted) Assessing the sensitivity of three Alaska marine
-food webs to perturbations: an example of Ecosim simulations using Rpath
-
-This function generates random parameters around the Ecopath baseline,
-not the scenario.: 
-\code{\link{rsim.sense}()}
-}
 \concept{Rpath functions
 
 Whitehouse and Aydin (Submitted) Assessing the sensitivity of three Alaska marine

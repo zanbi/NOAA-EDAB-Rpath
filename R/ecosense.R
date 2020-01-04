@@ -7,22 +7,24 @@
 ################################################################################
 
 ################################################################################
-#' Ecosense function for rpath (rsim.sense.path)
+#' Ecosense function for rpath (rsim.sense)
 #'
-#' 5 November 2019
+#' Kerim Aydin 31 December 2019
 #'@family Rpath functions
 #'
-#' Whitehouse and Aydin (Submitted) Assessing the sensitivity of three Alaska marine
-#' food webs to perturbations: an example of Ecosim simulations using Rpath
+#' This function generates random parameters around a given rsim scenario
+#' object.  
 #'
-#' This function generates random parameters around the Ecopath baseline,
-#' not the scenario.
+#' It has been tested to give the same results as Whitehouse and Aydin 
+#' (Submitted) when supplied with a straight-from-ecopath rsim secnario.
+#' and the same random seed - though some minor bug corrections have been
+#' found in the previous version (previous version is rsim.sense.path)
 #'
 #'@return Returns an Rsim.scenario object that can be supplied to the rsim.run function.
 #'@useDynLib Rpath
 #' @export
 rsim.sense <- function(Rpath.scenario, Rpath.params, 
-                       Vvary=c(-4.5,4.5), Dvary=c(0,0)){
+                         Vvary=c(0,0), Dvary=c(0,0)){
  
   # A "read only" version of the input params, for reference  
     orig.params  <- Rpath.scenario$params
@@ -139,13 +141,15 @@ rsim.sense <- function(Rpath.scenario, Rpath.params,
     # Diet comp pedigree
     DCpedigree <- DCVAR[sp.PreyTo]
     ## Random diet comp
-# TODO: shouldn't need EPSILON adjustment drawing this way - kept for matching old.
+# TODO: make EPSILON lower??  (1e-16 might work?)
     EPSILON <- 1*10^-8
     betascale <- 1.0
     DCbeta <- betascale * DCpedigree * DCpedigree
-    alpha <- DCvector/DCbeta
+    alpha <- ifelse(DCbeta>0,DCvector/DCbeta, DCvector)
     DClinks <- rgamma(length(DCvector), shape=alpha, rate=DCbeta)
-    DClinks2 <- ifelse(DClinks < EPSILON, 2 * EPSILON, DClinks)
+    # We do need to check cases were Beta=0 (implying no variance)   
+    DClinks1 <- ifelse(DCbeta<=0, DCvector, DClinks)
+    DClinks2 <- ifelse(DClinks1 < EPSILON, 2 * EPSILON, DClinks1)
     # DClinks2 prevents random diet comps from becoming too low, effectively
     # equal to zero. Zeros in DClinks will produce NaN's in sense.params$QQ, and
     # others, ultimately preventing ecosim.
@@ -191,8 +195,8 @@ rsim.sense <- function(Rpath.scenario, Rpath.params,
     #sense.params$PreyFrom       <- c(0, sense.params$PreyFrom)
     #sense.params$PreyTo         <- c(0, sense.params$PreyTo)
     sense.params$QQ             <- c(0, ranQQ)
-    sense.params$DD             <- c(0, ranDD)
-    sense.params$VV             <- c(0, ranVV) 
+    sense.params$DD             <- c(1000, ranDD) # using default of 1000 for first group 
+    sense.params$VV             <- c(2, ranVV)    # using default of 2 for first group
     sense.params$PredPredWeight <- c(0, ranPredPredWeight)
     sense.params$PreyPreyWeight <- c(0, ranPreyPreyWeight)
 

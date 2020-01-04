@@ -2,30 +2,22 @@
 % Please edit documentation in R/ecosense.R
 \name{rsim.sense}
 \alias{rsim.sense}
-\title{Ecosense function for rpath (rsim.sense.path)}
+\title{Ecosense function for rpath (rsim.sense)}
 \usage{
-rsim.sense(Rpath.scenario, Rpath.params, Vvary = c(-4.5, 4.5), Dvary = c(0, 0))
+rsim.sense(Rpath.scenario, Rpath.params, Vvary = c(0, 0), Dvary = c(0, 0))
 }
 \value{
 Returns an Rsim.scenario object that can be supplied to the rsim.run function.
 }
 \description{
-5 November 2019
-}
-\seealso{
-Other Rpath functions
-
-Whitehouse and Aydin (Submitted) Assessing the sensitivity of three Alaska marine
-food webs to perturbations: an example of Ecosim simulations using Rpath
-
-This function generates random parameters around the Ecopath baseline,
-not the scenario.: 
-\code{\link{rsim.sense.path}()}
+Kerim Aydin 31 December 2019
 }
 \concept{Rpath functions
 
-Whitehouse and Aydin (Submitted) Assessing the sensitivity of three Alaska marine
-food webs to perturbations: an example of Ecosim simulations using Rpath
+This function generates random parameters around a given rsim scenario
+object.  
 
-This function generates random parameters around the Ecopath baseline,
-not the scenario.}
+It has been tested to give the same results as Whitehouse and Aydin 
+(Submitted) when supplied with a straight-from-ecopath rsim secnario.
+and the same random seed - though some minor bug corrections have been
+found in the previous version (previous version is rsim.sense.path)}

@@ -13,154 +13,79 @@ bal       <- rpath(unbal) # balanced
 all_years <- 1991:2090
 scene     <- rsim.scenario(bal, unbal, years = all_years) # Ecosim params
 
-par0 <- scene$params
-set.seed(12345)
-par1 <- rsim.sense.path(scene, bal, unbal)	
+# testing routine to compare parameter sets by vector - supply the name of the vector
+  par_compare <- function(this, p0,p1,p2,p3){
+    original    <- p0[[this]];  sense.zero <- p1[[this]] 
+    sense.path  <- p2[[this]];  sense.new  <- p3[[this]]
+    dif.zero  <- sense.zero-original;  changed.zero <- ifelse(sense.zero==original,F,T)
+    dif.sense <- sense.new-sense.path; changed.path <- ifelse(sense.new==sense.path,F,T)
+    return(data.frame(original,sense.zero,dif.zero,changed.zero,sense.path,sense.new,dif.sense,changed.path))
+  }
 
-set.seed(12345)
-par2 <- rsim.sense.path(scene, bal, unbal)
-set.seed(12345)
-par3 <- rsim.sense(scene, unbal)	
+# saved version of base params
+  par0 <- scene$params
 
-par3 <- rsim.sense(scene, bal, unbal, Vrange=c(-1,1))
+# make a copy of the unbal rpath params to manipulate pedigree
+# TODO: make some adjust functions for pedigree
+  unbal0 <- unbal
+  unbal0$pedigree$B[]    <- 0
+  unbal0$pedigree$PB[]   <- 0
+  unbal0$pedigree$QB[]   <- 0
+  unbal0$pedigree$Diet[] <- 0
 
-par_compare("B_BaseRef",par0,par2,par3)
-par_compare("PBopt",par0,par2,par3)
-par_compare("FtimeQBOpt",par0,par2,par3)
+# par1 should have all variance as 0, therefore the output should match the input.
+# seed shouldn't matter but worth testing
+  set.seed(12345)
+  par1 <- rsim.sense(scene, unbal0)
+  # testing the pedigree=0 case in rsim.sense.path revealed a bug from before
+  # (diet pedigrees of 0 broke the gamma function)
+  # set.seed(12345)
+  # par1a <- rsim.sense.path(scene,bal,unbal0)
 
-par_compare("MzeroMort",par0,par2,par3)
-par_compare("UnassimRespFrac",par0,par2,par3) # UNCHANGED
-par_compare("ActiveRespFrac",par0,par2,par3)
-par_compare("NoIntegrate",par0,par2,par3)
+# par2 uses the old method (renamed as rsim.sense.path but otherwise unchanged)  
+  set.seed(12345)
+  par2 <- rsim.sense.path(scene, bal, unbal)
 
-par_compare <- function(this, pb, p0, p1){
- #sp   <- pb$spname 
- orig <- pb[[this]]
- base <- p0[[this]]; perturb <- p1[[this]]
- dif  <- perturb - base; changed <- ifelse(perturb==base,F,T)
- return(data.frame(orig,base,perturb,dif,changed))
-}
+# par3 uses the new method - with the same pedigree used in par2.  It should
+# give the same results, with some possible numerical error due to methods
+# (numerical error order of 10^-8 of original value). 
+# Unlike rsim.sense.path, the default vulnerability variance is 0, so here the
+# vul range (Vvary) used the range hardcoded in the rsim.sense.path method.
+  set.seed(12345)
+  par3 <- rsim.sense(scene, unbal, Vvary=c(-4.5,4.5))	
+  
+# Now examine all the variables
+# Check means same results in old versus new methods 
+# UNCHANGED means it's not recalculated from the base values
+#
+par_compare("B_BaseRef",par0,par1,par2,par3)       # Check
+par_compare("PBopt",par0,par1,par2,par3)           # Check
+par_compare("FtimeQBOpt",par0,par1,par2,par3)      # Check
+par_compare("MzeroMort",par0,par1,par2,par3)       # Check
+par_compare("UnassimRespFrac",par0,par1,par2,par3) # UNCHANGED
+par_compare("ActiveRespFrac",par0,par1,par2,par3)  # Check - need to change method for negative respiration?
+par_compare("NoIntegrate",par0,par1,par2,par3)     # Need to add Stanzas to NoIntegrate? (old and new versions)
+par_compare("HandleSelf",par0,par1,par2,par3)      # UNCHANGED
+par_compare("ScrambleSelf",par0,par1,par2,par3)    # UNCHANGED
 
-par_compare("PreyFrom",par0,par2,par3)    # UNCHANGED
-par_compare("PreyTo",par0,par2,par3)      # UNCHANGED
-par_compare("QQ",par0,par2,par3)
-par_compare("DD",par0,par2,par3)          # WEIRDLY CHANGED 1000 to 1001 also check first one
-par_compare("VV",par0,par2,par3)
+par_compare("PreyFrom",par0,par1,par2,par3)        # UNCHANGED (recalculated in old method)
+par_compare("PreyTo",par0,par1,par2,par3)          # UNCHANGED (recalculated in old method)
+par_compare("QQ",par0,par1,par2,par3)              # Check - numerically different, added beta trap for 0 variance
+par_compare("VV",par0,par1,par2,par3)              # Check - changed "outside - outside" vul from 0 to 2 
+par_compare("DD",par0,par1,par2,par3)              # Bug in old version set these to 1001, not 1000 - changed to 1000.
+                                                   # also sets first one to previous default (1000) instead of 0.
+par_compare("PredPredWeight",par0,par1,par2,par3)  # Check - there were some cumulative addition errors (epsilon-sized)
+par_compare("PreyPreyWeight",par0,par1,par2,par3)  # Check - there were some cumulative addition errors (epsilon-sized)
 
+par_compare("FishFrom",par0,par1,par2,par3)        # UNCHANGED
+par_compare("FishTo",par0,par1,par2,par3)          # UNCHANGED
+par_compare("FishThrough",par0,par1,par2,par3)     # UNCHANGED
+par_compare("FishQ",par0,par1,par2,par3)           # Check - TODO add variance here
+par_compare("DetFrom",par0,par1,par2,par3)         # UNCHANGED
+par_compare("DetTo",par0,par1,par2,par3)           # UNCHANGED
+par_compare("DetFrac",par0,par1,par2,par3)         # UNCHANGED
 
-
-sp_pars <- c("B_BaseRef","MzeroMort","UnassimRespFrac","ActiveRespFrac",
-             "FtimeAdj","FtimeQBOpt","PBopt","NoIntegrate","HandleSelf",      
-             "ScrambleSelf")
-
-
-par_compare("B_BaseRef",par0,par1)
-par_compare("MzeroMort",par0,par1)
-par_compare("UnassimRespFrac",par0,par1) # UNCHANGED
-par_compare("ActiveRespFrac",par0,par1)
-par_compare("FtimeAdj",par0,par1)        # UNCHANGED
-par_compare("FtimeQBOpt",par0,par1)
-par_compare("PBopt",par0,par1)
-par_compare("NoIntegrate",par0,par1)
-par_compare("HandleSelf",par0,par1)      # UNCHANGED
-par_compare("ScrambleSelf",par0,par1)    # UNCHANGED
-
-par_compare("PreyFrom",par0,par1)    # UNCHANGED
-par_compare("PreyTo",par0,par1)      # UNCHANGED
-par_compare("QQ",par0,par1)
-par_compare("DD",par0,par1)          # WEIRDLY CHANGED 1000 to 1001 also check first one
-par_compare("VV",par0,par1)
-par_compare("PredPredWeight",par0,par1)
-par_compare("PreyPreyWeight",par0,par1)
-
-par_compare("FishFrom",par0,par2,par3)      # UNCHANGED
-par_compare("FishTo",par0,par2,par3)      # UNCHANGED
-par_compare("FishThrough",par0,par2,par3)   # UNCHANGED
-par_compare("FishQ",par0,par2,par3)
-
-par_compare("DetFrom",par0,par1)       # UNCHANGED
-par_compare("DetTo",par0,par1)         # UNCHANGED
-par_compare("DetFrac",par0,par1)       # UNCHANGED
-
-#> names(par0)
-# [1] "NUM_GROUPS"       "NUM_LIVING"       "NUM_DEAD"         "NUM_GEARS"       
-# [5] "NUM_BIO"          "spname"           "spnum"            "B_BaseRef"       
-# [9] "MzeroMort"        "UnassimRespFrac"  "ActiveRespFrac"   "FtimeAdj"        
-#[13] "FtimeQBOpt"       "PBopt"            "NoIntegrate"      "HandleSelf" 
-#[17] "ScrambleSelf"     
-
-# "PreyFrom"         "PreyTo"           "QQ"              
-#[21] "DD"               "VV"               "HandleSwitch"     "PredPredWeight"  
-#[25] "PreyPreyWeight"   "NumPredPreyLinks" "FishFrom"         "FishThrough"     
-#[29] "FishQ"            "FishTo"           "NumFishingLinks"  "DetFrac"         
-#[33] "DetFrom"          "DetTo"            "NumDetLinks"      "BURN_YEARS"      
-#[37] "COUPLED"          "RK4_STEPS"    
-
-set.seed(123)
-
-
-PPIND <- 2:(par0$NumPredPreyLinks+1) 
-IND   <- 2:(par0$NUM_GROUPS+1) 
-NPP    <-  length(PPIND)
-log.v  <-  log(par0$VV[PPIND] - 1) 
-#ranVV  <-  1 + exp(runif(NPP, log.v-4.5, log.v+4.5))
-ranVV  <-  1 + exp(runif(NPP, log.v-0, log.v+0))
-ranQQ  <-  par0$QQ[PPIND]
-ranBB  <-  par0$B_BaseRef[IND]
-
-namedBB <- c(1.0,ranBB); names(namedBB)<-0:par0$NUM_GROUPS
-py   <- as.character(par0$PreyFrom[PPIND]) # + 1.0
-pd   <- as.character(par0$PreyTo[PPIND])   # + 1.0
-prey.BB <- namedBB[py]
-pred.BB <- namedBB[pd]
-VV   <- as.numeric(ranVV*ranQQ / prey.BB)
-AA   <- as.numeric((2.0 * ranQQ * VV) / (VV*pred.BB*prey.BB - ranQQ*pred.BB))
-ranPredPred <- as.numeric(AA * pred.BB)
-ranPreyPrey <- as.numeric(AA * prey.BB)
-ranPredPredWeight <- as.numeric(ranPredPred/(tapply(ranPredPred, py, "sum")[py]))
-ranPreyPreyWeight <- as.numeric(ranPreyPrey/(tapply(ranPreyPrey, pd, "sum")[pd]))
-
-
-
-# TEST STUFF
-
-DCVAR     <- as.numeric(unlist(unbal$pedigree[,5])) 
-
-sp.PreyTo <- par0$PreyTo[2:(par0$NumPredPreyLinks+1)]
-QBOpt     <- par0$FtimeQBOpt[2:(par0$NUM_GROUPS+1)]
-ranBB     <- par0$B_BaseRef[2:(par0$NUM_GROUPS+1)]
-
-Qvector   <- par0$QQ[2:(par0$NumPredPreyLinks+1)]
-
-#We don't actually need to replace 
-QDCvector <- ifelse(bal$type[sp.PreyTo]==1,0, Qvector/tapply(Qvector, sp.PreyTo, "sum")[sp.PreyTo])
-
-DCvector <- c(rep(0.0, sum(bal$type==1)), bal$DC[bal$DC>0])
-
-DCvector <- QDCvector
-# Diet comp pedigree
-DCpedigree <- DCVAR[sp.PreyTo]
-## Random diet comp
-EPSILON <- 1*10^-8
-betascale <- 1.0
-DCbeta <- betascale * DCpedigree * DCpedigree
-alpha <- DCvector/DCbeta
-
-set.seed(123)
-DClinks <- rgamma(length(DCvector), shape=alpha, rate=DCbeta)
-
-DClinks2 <- ifelse(DClinks < EPSILON, 2 * EPSILON, DClinks)
-# DClinks2 prevents random diet comps from becoming too low, effectively
-# equal to zero. Zeros in DClinks will produce NaN's in sense.params$QQ, and
-# others, ultimately preventing ecosim.
-DCtot <- tapply(DClinks2, sp.PreyTo, "sum")    
-# Normalized diet comp
-DCnorm <- ifelse(bal$type[sp.PreyTo]==1, 1.0, DClinks2/DCtot[sp.PreyTo])
-# The "if" part of DCnorm is so the DC of phytoplankton (type==1) won't equal zero
-DCQB <- QBOpt[sp.PreyTo]
-DCBB <- ranBB[sp.PreyTo]  
-sp.QQ <- DCnorm * DCQB * DCBB    
-
+ 
 
 
 
