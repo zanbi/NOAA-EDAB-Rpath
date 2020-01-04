@@ -85,7 +85,40 @@ par_compare("DetFrom",par0,par1,par2,par3)         # UNCHANGED
 par_compare("DetTo",par0,par1,par2,par3)           # UNCHANGED
 par_compare("DetFrac",par0,par1,par2,par3)         # UNCHANGED
 
- 
+
+# UNCHANGED FROM Andy's test loop EXCEPT set seed.
+# Should be able to replace rsim.sense.path line as indicated
+# and come up with identical output.
+scene$params$BURN_YEARS <- 50
+NUM_RUNS <- 100
+parlist<-as.list(rep(NA,NUM_RUNS))
+kept<-rep(NA,NUM_RUNS)
+
+set.seed(12345)
+
+for (i in 1:NUM_RUNS){
+  EBSsense <- scene 
+  # INSERT SENSE ROUTINE BELOW
+  parlist[[i]]<- scene$params 		# Base ecosim params
+  # LINE TO CHANGE
+    # parlist[[i]]<- rsim.sense.path(scene, bal, unbal)	# Replace the base params with Ecosense params
+  # New version should give same accept/rejects
+    parlist[[i]]<- rsim.sense(scene, unbal, Vvary=c(-4.5,4.5))	# Replace the base params with Ecosense params
+  EBSsense$start_state$BB <- parlist[[i]]$B_BaseRef
+  parlist[[i]]$BURN_YEARS <- 50			# Set Burn Years to 50
+  EBSsense$params <- parlist[[i]]
+  EBStest <- rsim.run(EBSsense, method="AB", years=all_years)
+  failList <- which(is.na(EBStest$end_state$BB))
+  {if (length(failList)>0)
+  {cat(i,": fail in year ",EBStest$crash_year,": ",failList,"\n"); kept[i]<-F; flush.console()}
+    else 
+    {cat(i,": success!\n"); kept[i]<-T;  flush.console()}}
+  parlist[[i]]$BURN_YEARS <- 1
+}
+
+
+
+
 
 
 

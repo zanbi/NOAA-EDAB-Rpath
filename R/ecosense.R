@@ -90,29 +90,8 @@ rsim.sense <- function(Rpath.scenario, Rpath.params,
       ifelse(sense.params$MzeroMort*sense.params$B_BaseRef > 24, 0, sense.params$spnum)
   
   # KYA 12/31/19 - We don't need to recaculated predprey links, just Q(links)
-  # So this section can be deleted
-      #   primTo   <- ifelse(TYPE > 0 & TYPE <= 1, 1:length(ranPB), 0)
-      #   primFrom <- rep(0, length(Rpath$PB))
-      #   primQ    <- ranPB * ranBB 
-
-      # Change production to consusmption for mixotrophs
-      #mixotrophs <- which(Rpath$type > 0 & Rpath$type < 1)
-      #primQ[mixotrophs] <- primQ[mixotrophs] / Rpath$GE[mixotrophs] * 
-      #        Rpath$type[mixotrophs]
-
-      #Predator/prey links
-      #preyfrom  <- row(Rpath$DC)
-      #preyto    <- col(Rpath$DC)
-      # KYA 12/31/19 note if we need the below again, QBOpt index is off by 1	
-      #predpreyQ <- Rpath$DC[1:(nliving + ndead + 1), ] * 
-      #  t(matrix(QBOpt[1:Rpath$NUM_LIVING] * ranBB[1:Rpath$NUM_LIVING],
-      #          nliving, nliving + ndead + 1))
-  
-      #combined
-      #sense.params$PreyFrom <- c(primFrom[primTo > 0], preyfrom [predpreyQ > 0])
-      # Changed import prey number to 0
-      #sense.params$PreyFrom[which(sense.params$PreyFrom == nrow(Rpath$DC))] <- 0
-      #sense.params$PreyTo   <- c(primTo  [primTo > 0], preyto   [predpreyQ > 0])
+  # So the section from 'primTo <- ifelse' to  'sense.params$PreyTo   <- c(primTo'
+  # has been deleted.
   
   ##### This is where we add uncertainty to diet  #####
   # Original version created this diet comp vector from Rpath$DC and
@@ -201,55 +180,16 @@ rsim.sense <- function(Rpath.scenario, Rpath.params,
     sense.params$PreyPreyWeight <- c(0, ranPreyPreyWeight)
 
   # Fisheries Catch
-  # The Whitehouse et al. version didn't actualy vary catch,
-  # the only thing it does it renomalize FishQ.  Therefore only Q 
-  # calculation lines are needed.  Since Q is now calculated slightly
-  # differently (not from rpath) there are slight (10^-18) differences
-  # from the previous version.
-
-#TODO add catch uncertainty
-
+  # The Whitehouse et al. version didn't actualy vary catch, the only thing it 
+  # does it renomalize FishQ.  Therefore only Q calculation lines are needed.  
+  # Since Q is now calculated slightly differently (not from rpath) there are 
+  # slight (10^-18) differences from the previous version.
     CIND = orig.params$FishFrom + 1
     sense.params$FishQ <- orig.params$FishQ * 
                           orig.params$B_BaseRef[CIND]/sense.params$B_BaseRef[CIND] 
-
-  # fishfrom    <- row(as.matrix(Rpath$Catch))
-  # fishthrough <- col(as.matrix(Rpath$Catch)) + (nliving + ndead)
-  # fishcatch   <- Rpath$Catch
-  # fishto      <- fishfrom * 0
   
-  # if(sum(fishcatch) > 0){
-    # sense.params$FishFrom    <- fishfrom   [fishcatch > 0]
-    # sense.params$FishThrough <- fishthrough[fishcatch > 0]
-    # sense.params$FishQ       <- fishcatch  [fishcatch > 0] / sense.params$B_BaseRef[sense.params$FishFrom + 1]  
-    # sense.params$FishTo      <- fishto     [fishcatch > 0]
-  # }
+#TODO add catch uncertainty
 
-  # Detritus (DetFate) and detritus linkes are not varied
-  #
-  #discard links
-  #for(d in 1:Rpath$NUM_DEAD){
-  #  detfate <- Rpath$DetFate[(nliving + ndead + 1):Rpath$NUM_GROUPS, d]
-  #  detmat  <- t(matrix(detfate, Rpath$NUM_GEAR, Rpath$NUM_GROUPS))
-  #  
-  #  fishfrom    <-  row(as.matrix(Rpath$Discards))                      
-  #  fishthrough <-  col(as.matrix(Rpath$Discards)) + (nliving + ndead)
-  #  fishto      <-  t(matrix(nliving + d, Rpath$NUM_GEAR, Rpath$NUM_GROUPS))
-  #  fishcatch   <-  Rpath$Discards * detmat
-  #  if(sum(fishcatch) > 0){
-  #    sense.params$FishFrom    <- c(sense.params$FishFrom,    fishfrom   [fishcatch > 0])
-  #    sense.params$FishThrough <- c(sense.params$FishThrough, fishthrough[fishcatch > 0])
-  #    ffrom <- fishfrom[fishcatch > 0]
-  #    sense.params$FishQ       <- c(sense.params$FishQ,  fishcatch[fishcatch > 0] / sense.params$B_BaseRef[ffrom + 1])  
-  #    sense.params$FishTo      <- c(sense.params$FishTo, fishto   [fishcatch > 0])
-  #  }
-  #} 
-
-  #sense.params$FishFrom        <- c(0, sense.params$FishFrom)
-  #sense.params$FishThrough     <- c(0, sense.params$FishThrough)
-  #sense.params$FishTo          <- c(0, sense.params$FishTo) 
-  #sense.params$FishQ           <- c(0, sense.params$FishQ)  
-  
   class(sense.params) <- 'Rsim.params'
   return(sense.params)   
   
