@@ -1,17 +1,24 @@
 
 setwd("C:/src/sean_rpath/EBS_ecosim")
 
-Ebase <- "models/EBS_ACLIM_72_BIO_base.csv"  # Base biomass, production, fishing, etc.
-Ediet <- "models/EBS_ACLIM_72_BIO_diet.csv"  # Diet matrix
-Eped  <- "models/EBS_ACLIM_72_BIO_ped_2.csv"   # Data pedigree = quality of input data
-Estz  <- "models/EBS_ACLIM_72_BIO_stanzas.csv"   # Stanzas
-Estg  <- "models/EBS_ACLIM_72_BIO_stanza_groups.csv" # Stanza groups
+# Stanzas model test
+#  Ebase <- "models/EBS_ACLIM_72_BIO_base.csv"  # Base biomass, production, fishing, etc.
+#  Ediet <- "models/EBS_ACLIM_72_BIO_diet.csv"  # Diet matrix
+#  Eped  <- "models/EBS_ACLIM_72_BIO_ped_2.csv"   # Data pedigree = quality of input data
+#  Estz  <- "models/EBS_ACLIM_72_BIO_stanzas.csv"   # Stanzas
+#  Estg  <- "models/EBS_ACLIM_72_BIO_stanza_groups.csv" # Stanza groups
+#  unbal <- rpath.stanzas(read.rpath.params(Ebase, Ediet, Eped, Estg, Estz)) # unbalanced
+
+# Non-stanzas model test
+  Ebase <- "models/sensetests/ECS_eis_base_July2015_AGG.csv" 
+  Ediet <- "models/sensetests/ECS_eis_diet_Jun2015_AGG.csv" 
+  Eped  <- "models/sensetests/ECS_eis_ped_Jun2015_AGG.csv"   
+  unbal <- read.rpath.params(Ebase, Ediet, Eped) 
 
 # Setup Base Ecopath and Base Rsim scenario
-unbal     <- rpath.stanzas(read.rpath.params(Ebase, Ediet, Eped, Estg, Estz)) # unbalanced
-bal       <- rpath(unbal) # balanced
-all_years <- 1991:2090
-scene     <- rsim.scenario(bal, unbal, years = all_years) # Ecosim params
+  bal       <- rpath(unbal) # balanced
+  all_years <- 1991:2090
+  scene     <- rsim.scenario(bal, unbal, years = all_years) # Ecosim params
 
 # testing routine to compare parameter sets by vector - supply the name of the vector
   par_compare <- function(this, p0,p1,p2,p3){
@@ -86,11 +93,12 @@ par_compare("DetTo",par0,par1,par2,par3)           # UNCHANGED
 par_compare("DetFrac",par0,par1,par2,par3)         # UNCHANGED
 
 
+source("rsim_sense_Nov2019.r")
 # UNCHANGED FROM Andy's test loop EXCEPT set seed.
 # Should be able to replace rsim.sense.path line as indicated
 # and come up with identical output.
 scene$params$BURN_YEARS <- 50
-NUM_RUNS <- 100
+NUM_RUNS <- 1000
 parlist<-as.list(rep(NA,NUM_RUNS))
 kept<-rep(NA,NUM_RUNS)
 
@@ -101,9 +109,9 @@ for (i in 1:NUM_RUNS){
   # INSERT SENSE ROUTINE BELOW
   parlist[[i]]<- scene$params 		# Base ecosim params
   # LINE TO CHANGE
-    # parlist[[i]]<- rsim.sense.path(scene, bal, unbal)	# Replace the base params with Ecosense params
+    parlist[[i]]<- rsim.sense.orig(scene, bal, unbal)	# Replace the base params with Ecosense params
   # New version should give same accept/rejects
-    parlist[[i]]<- rsim.sense(scene, unbal, Vvary=c(-4.5,4.5))	# Replace the base params with Ecosense params
+    #parlist[[i]]<- rsim.sense(scene, unbal, Vvary=c(-4.5,4.5))	# Replace the base params with Ecosense params
   EBSsense$start_state$BB <- parlist[[i]]$B_BaseRef
   parlist[[i]]$BURN_YEARS <- 50			# Set Burn Years to 50
   EBSsense$params <- parlist[[i]]
