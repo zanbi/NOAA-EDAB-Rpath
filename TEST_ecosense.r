@@ -1,5 +1,5 @@
 
-setwd("C:/src/sean_rpath/EBS_ecosim")
+setwd("E:/src/sean_rpath/EBS_ecosim")
 
 # Stanzas model test
 #  Ebase <- "models/EBS_ACLIM_72_BIO_base.csv"  # Base biomass, production, fishing, etc.
@@ -10,9 +10,9 @@ setwd("C:/src/sean_rpath/EBS_ecosim")
 #  unbal <- rpath.stanzas(read.rpath.params(Ebase, Ediet, Eped, Estg, Estz)) # unbalanced
 
 # Non-stanzas model test
-  Ebase <- "models/sensetests/ECS_eis_base_July2015_AGG.csv" 
-  Ediet <- "models/sensetests/ECS_eis_diet_Jun2015_AGG.csv" 
-  Eped  <- "models/sensetests/ECS_eis_ped_Jun2015_AGG.csv"   
+  Ebase <- "models/sensetests/EBS_base_Aug2016_AGG.csv" 
+  Ediet <- "models/sensetests/EBS_diet_Aug2016_AGG.csv" 
+  Eped  <- "models/sensetests/EBS_ped_Aug2016_AGG.csv"   
   unbal <- read.rpath.params(Ebase, Ediet, Eped) 
 
 # Setup Base Ecopath and Base Rsim scenario
