@@ -1,5 +1,5 @@
 
-setwd("E:/src/sean_rpath/EBS_ecosim")
+setwd("C:/src/sean_rpath/EBS_ecosim")
 
 # Stanzas model test
 #  Ebase <- "models/EBS_ACLIM_72_BIO_base.csv"  # Base biomass, production, fishing, etc.
@@ -9,6 +9,7 @@ setwd("E:/src/sean_rpath/EBS_ecosim")
 #  Estg  <- "models/EBS_ACLIM_72_BIO_stanza_groups.csv" # Stanza groups
 #  unbal <- rpath.stanzas(read.rpath.params(Ebase, Ediet, Eped, Estg, Estz)) # unbalanced
 
+library(Rpath)
 # Non-stanzas model test
   Ebase <- "models/sensetests/EBS_base_Aug2016_AGG.csv" 
   Ediet <- "models/sensetests/EBS_diet_Aug2016_AGG.csv" 
@@ -102,6 +103,8 @@ NUM_RUNS <- 1000
 parlist<-as.list(rep(NA,NUM_RUNS))
 kept<-rep(NA,NUM_RUNS)
 
+scene$params$SENSE_LIMIT<-c(1e-14,1e8)
+
 set.seed(12345)
 
 for (i in 1:NUM_RUNS){
@@ -109,9 +112,9 @@ for (i in 1:NUM_RUNS){
   # INSERT SENSE ROUTINE BELOW
   parlist[[i]]<- scene$params 		# Base ecosim params
   # LINE TO CHANGE
-    parlist[[i]]<- rsim.sense.orig(scene, bal, unbal)	# Replace the base params with Ecosense params
+    #parlist[[i]]<- rsim.sense.orig(scene, bal, unbal)	# Replace the base params with Ecosense params
   # New version should give same accept/rejects
-    #parlist[[i]]<- rsim.sense(scene, unbal, Vvary=c(-4.5,4.5))	# Replace the base params with Ecosense params
+    parlist[[i]]<- rsim.sense(scene, unbal, Vvary=c(-4.5,4.5))	# Replace the base params with Ecosense params
   EBSsense$start_state$BB <- parlist[[i]]$B_BaseRef
   parlist[[i]]$BURN_YEARS <- 50			# Set Burn Years to 50
   EBSsense$params <- parlist[[i]]
@@ -124,6 +127,7 @@ for (i in 1:NUM_RUNS){
   parlist[[i]]$BURN_YEARS <- 1
 }
 
+sum(kept)
 
 
 
