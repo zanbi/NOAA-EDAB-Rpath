@@ -103,7 +103,7 @@ NUM_RUNS <- 1000
 parlist<-as.list(rep(NA,NUM_RUNS))
 kept<-rep(NA,NUM_RUNS)
 
-scene$params$SENSE_LIMIT<-c(1e-14,1e8)
+scene$params$SENSE_LIMIT<-c(1e-10,1e8)
 
 set.seed(12345)
 
