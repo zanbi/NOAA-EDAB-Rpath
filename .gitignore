@@ -15,4 +15,5 @@ Rpath.Rcheck*
 man/
 src/*.o
 src/*.dll
+.gitignore
 
