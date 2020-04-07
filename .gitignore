@@ -12,3 +12,7 @@ code
 *.docx
 Ecopath_dev
 Rpath.Rcheck*
+man/
+src/*.o
+src/*.dll
+

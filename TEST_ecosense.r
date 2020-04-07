@@ -93,8 +93,9 @@ par_compare("DetFrom",par0,par1,par2,par3)         # UNCHANGED
 par_compare("DetTo",par0,par1,par2,par3)           # UNCHANGED
 par_compare("DetFrac",par0,par1,par2,par3)         # UNCHANGED
 
-
-source("rsim_sense_Nov2019.r")
+# To load rsim.sense.orig
+#   source("rsim_sense_Nov2019.r")
+#
 # UNCHANGED FROM Andy's test loop EXCEPT set seed.
 # Should be able to replace rsim.sense.path line as indicated
 # and come up with identical output.
@@ -103,7 +104,7 @@ NUM_RUNS <- 1000
 parlist<-as.list(rep(NA,NUM_RUNS))
 kept<-rep(NA,NUM_RUNS)
 
-scene$params$SENSE_LIMIT<-c(1e-10,1e8)
+scene$params$SENSE_LIMIT<-c(1e-4,1e4)
 
 set.seed(12345)
 
@@ -119,7 +120,7 @@ for (i in 1:NUM_RUNS){
   parlist[[i]]$BURN_YEARS <- 50			# Set Burn Years to 50
   EBSsense$params <- parlist[[i]]
   EBStest <- rsim.run(EBSsense, method="AB", years=all_years)
-  failList <- which(is.na(EBStest$end_state$BB))
+  failList <- which(is.na(EBStest$end_state$Biomass))
   {if (length(failList)>0)
   {cat(i,": fail in year ",EBStest$crash_year,": ",failList,"\n"); kept[i]<-F; flush.console()}
     else 
