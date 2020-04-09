@@ -1,4 +1,4 @@
-
+ 
 setwd("C:/src/sean_rpath/EBS_ecosim")
 
 # Stanzas model test
