@@ -261,15 +261,20 @@ rpath <- function(Rpath.params, eco.name = NA, eco.area = 1){
   dimnames(detfatem)                  <- list(NULL, NULL)
   detfatem[is.na(detfatem)]           <- 0
 
+  # KYA April 2020 - added names for output list
+    out.Group   <- as.character(balanced$Group)
+    out.Biomass <- balanced$Biomass; #names(out.Biomass) <- out.Group
+    out.type    <- model[, Type];    #names(out.type) <- out.Group
+  
   # list structure for sim inputs
   path.model <- list(NUM_GROUPS = ngroups,
                      NUM_LIVING = nliving,
                      NUM_DEAD   = ndead,
                      NUM_GEARS  = ngear,
-                     Group      = as.character(balanced$Group),
-                     type       = model[, Type],
+                     Group      = out.Group,
+                     type       = out.type,
                      TL         = TL,
-                     Biomass    = balanced$Biomass,
+                     Biomass    = out.Biomass,
                      PB         = balanced$PB,
                      QB         = balanced$QB,
                      EE         = balanced$EE,
