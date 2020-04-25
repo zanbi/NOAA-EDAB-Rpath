@@ -238,6 +238,21 @@ rsim.deriv <- function(Rpath.scenario, year=0, month=0, tstep=0){
 }
 
 #####################################################################################
+#'@export
+rsim.deriv.q <- function(Rpath.scenario, year=0, month=0, tstep=0){
+  scene <- copy(Rpath.scenario)
+  rout <- deriv_vector(scene$params,  scene$start_state, 
+                       scene$forcing, scene$fishing,
+                       scene$stanzas, year, month, tstep)
+  
+  rtab <- data.frame(scene$params$spname[scene$params$PreyTo+1], 
+       scene$params$spname[scene$params$PreyFrom+1],
+       rout$Qlink)
+  colnames(rtab)<-c("Predator","Prey","Q")
+  return(rtab)
+}
+
+#####################################################################################
 #'Initial set up for Ecosim modual of Rpath
 #'
 #'Converts the outputs from ecopath into rates for use in ecosim.
