@@ -441,6 +441,13 @@ rsim.params <- function(Rpath, mscramble = 2, mhandle = 1000, preyswitch = 1,
   simpar$RK4_STEPS   <- 4.0
   simpar$SENSE_LIMIT <- c(1e-4, 1e4)
   
+# KYA April 2020 Adding names to species-length vectors
+  gnames <- as.character(c("Outside",Rpath$Group))
+  names(simpar$spname)<-names(simpar$spnum)<-names(simpar$B_BaseRef) <- gnames
+  names(simpar$MzeroMort)<-names(simpar$UnassimRespFrac)<-names(simpar$ActiveRespFrac) <- gnames   
+  names(simpar$FtimeAdj)<-names(simpar$FtimeQBOpt)<-names(simpar$PBopt) <- gnames            
+  names(simpar$NoIntegrate)<-names(simpar$HandleSelf)<-names(simpar$ScrambleSelf) <- gnames
+  
   class(simpar) <- "Rsim.params"
   return(simpar)
 }
