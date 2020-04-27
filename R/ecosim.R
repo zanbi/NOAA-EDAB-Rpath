@@ -238,21 +238,6 @@ rsim.deriv <- function(Rpath.scenario, year=0, month=0, tstep=0){
 }
 
 #####################################################################################
-#'@export
-rsim.deriv.q <- function(Rpath.scenario, year=0, month=0, tstep=0){
-  scene <- copy(Rpath.scenario)
-  rout <- deriv_vector(scene$params,  scene$start_state, 
-                       scene$forcing, scene$fishing,
-                       scene$stanzas, year, month, tstep)
-  
-  rtab <- data.frame(scene$params$spname[scene$params$PreyTo+1], 
-       scene$params$spname[scene$params$PreyFrom+1],
-       rout$Qlink)
-  colnames(rtab)<-c("Predator","Prey","Q")
-  return(rtab)
-}
-
-#####################################################################################
 #'Initial set up for Ecosim modual of Rpath
 #'
 #'Converts the outputs from ecopath into rates for use in ecosim.
@@ -388,14 +373,14 @@ rsim.params <- function(Rpath, mscramble = 2, mhandle = 1000, preyswitch = 1,
   simpar$PreyPreyWeight <- simpar$PreyPreyWeight/PreyTotWeight[pd]
   
   simpar$NumPredPreyLinks <- numpredprey
-  simpar$PreyFrom       <- c(0, simpar$PreyFrom)
-  simpar$PreyTo         <- c(0, simpar$PreyTo)
-  simpar$QQ             <- c(0, simpar$QQ)
-  simpar$DD             <- c(mhandle, simpar$DD)
-  simpar$VV             <- c(mscramble, simpar$VV) 
-  simpar$HandleSwitch   <- c(0, simpar$HandleSwitch) 
-  simpar$PredPredWeight <- c(0, simpar$PredPredWeight)
-  simpar$PreyPreyWeight <- c(0, simpar$PreyPreyWeight)
+  simpar$PreyFrom       <- c(0, simpar$PreyFrom); names(simpar$PreyFrom) <- NULL
+  simpar$PreyTo         <- c(0, simpar$PreyTo)  ; names(simpar$PreyTo) <- NULL
+  simpar$QQ             <- c(0, simpar$QQ)      ; names(simpar$QQ) <- NULL
+  simpar$DD             <- c(mhandle, simpar$DD); names(simpar$DD) <- NULL
+  simpar$VV             <- c(mscramble, simpar$VV); names(simpar$VV) <- NULL 
+  simpar$HandleSwitch   <- c(0, simpar$HandleSwitch); names(simpar$HandleSwitch) <- NULL 
+  simpar$PredPredWeight <- c(0, simpar$PredPredWeight); names(simpar$PredPredWeight) <- NULL
+  simpar$PreyPreyWeight <- c(0, simpar$PreyPreyWeight); names(simpar$PreyPreyWeight) <- NULL
   
   #landing links
   fishfrom    <- row(as.matrix(Rpath$Landings))
@@ -429,10 +414,10 @@ rsim.params <- function(Rpath, mscramble = 2, mhandle = 1000, preyswitch = 1,
   } 
   
   simpar$NumFishingLinks <- length(simpar$FishFrom)  
-  simpar$FishFrom        <- c(0, simpar$FishFrom)
-  simpar$FishThrough     <- c(0, simpar$FishThrough)
-  simpar$FishQ           <- c(0, simpar$FishQ)  
-  simpar$FishTo          <- c(0, simpar$FishTo)   
+  simpar$FishFrom        <- c(0, simpar$FishFrom)    ; names(simpar$FishFrom) <- NULL
+  simpar$FishThrough     <- c(0, simpar$FishThrough) ; names(simpar$FishThrough) <- NULL
+  simpar$FishQ           <- c(0, simpar$FishQ)       ; names(simpar$FishQ) <- NULL
+  simpar$FishTo          <- c(0, simpar$FishTo)      ; names(simpar$FishTo) <- NULL
   
 # SET DETRITAL FLOW
   detfrac <- Rpath$DetFate[1:(nliving + ndead), ]
@@ -443,9 +428,9 @@ rsim.params <- function(Rpath, mscramble = 2, mhandle = 1000, preyswitch = 1,
   dofrom <- 1:length(detout)
   doto   <- rep(0, length(detout))
   
-  simpar$DetFrac <- c(0, detfrac[detfrac > 0], detout[detout > 0])
-  simpar$DetFrom <- c(0, detfrom[detfrac > 0], dofrom[detout > 0])
-  simpar$DetTo   <- c(0, detto  [detfrac > 0], doto  [detout > 0])
+  simpar$DetFrac <- c(0, detfrac[detfrac > 0], detout[detout > 0]); names(simpar$DetFrac) <- NULL
+  simpar$DetFrom <- c(0, detfrom[detfrac > 0], dofrom[detout > 0]); names(simpar$DetFrom) <- NULL
+  simpar$DetTo   <- c(0, detto  [detfrac > 0], doto  [detout > 0]); names(simpar$DetTo) <- NULL
   simpar$NumDetLinks <- length(simpar$DetFrac) - 1
   
 # STATE VARIABLE DEFAULT 
