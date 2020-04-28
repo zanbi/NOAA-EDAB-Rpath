@@ -13,7 +13,9 @@
 rsim.plot <- function(Rsim.output, spname, indplot = F, ...){
   opar <- par(no.readonly = T)
   if(indplot == F){
-    biomass <- Rsim.output$out_Biomass[, 2:ncol(Rsim.output$out_Biomass)]
+    # KYA April 2020 this seems incorrect?
+    #biomass <- Rsim.output$out_Biomass[, 2:ncol(Rsim.output$out_Biomass)]
+    biomass <- Rsim.output$out_Biomass[, spname]
     n <- ncol(biomass)
     start.bio <- biomass[1, ]
     start.bio[which(start.bio == 0)] <- 1
