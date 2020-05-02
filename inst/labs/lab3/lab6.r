@@ -1,3 +1,8 @@
+
+
+
+
+
   ebs.scene0
 
   ebs.scene1 <- rsim.scenario(ebs.balanced, ebs.unbalanced, years = 1990:2089)
