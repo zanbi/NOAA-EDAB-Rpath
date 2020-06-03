@@ -88,23 +88,26 @@
   rsim.plot.catch(scene1,run.future,"W.Pollock")
   rsim.plot.biomass(scene1,run.future,"W.Pollock")  
 
+  fished.species <- c("W.Pollock", "P.Cod", "Arrowtooth", "P.Halibut", "Sm.Flatfish")
   # some 2014 statistics to examine
   f_current     <- run.future$annual_Catch["2014",fished.species]/run.future$annual_Biomass["2014",fished.species]
   bfrac_current <- run.future$annual_Biomass["2014",fished.species]/run.unfished$annual_Biomass["2049",fished.species]
 
+  
   # Make a list of the species of interest
-  fished.species <- c("W.Pollock", "P.Cod", "Arrowtooth", "P.Halibut", "Sm.Flatfish")
+  fished.species <- c("W.Pollock", "P.Cod", "P.Halibut", "Arrowtooth")
+  #fished.species <- c("W.Pollock", "P.Cod", "Arrowtooth", "P.Halibut", "Sm.Flatfish")
 
   # Now we run the future one year at a time
   for (y in 2015:2049){
     # Measure the ecosystem state in the previous year  
-    b_measured <- run.future$annual_Biomass[as.character(y-1), fished.species]
+    b_measured <- 1.1 * run.future$annual_Biomass[as.character(y-1), fished.species]
     c_measured <- run.future$annual_Catch[as.character(y-1), fished.species]
     f_measured <- c_measured/b_measured
     
     # Determine the desired F rate and therefore desired catch
-    f_desired  <- f_measured 
-    c_desired  <- f_desired * b_measured  
+    f_desired <- F_target_final # Added 40% Unfished biomass target
+    c_desired  <- 1.1 * f_desired * b_measured  
  
     # Apply Catch to next year
     for (sp in fished.species){
