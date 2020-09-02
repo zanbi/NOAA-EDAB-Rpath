@@ -6,7 +6,7 @@
 
 #####################################################################################
 
-#setwd("c:/src/sean_rpath/Rpath_public/inst/labs/lab4")
+setwd("c:/src/sean_rpath/Rpath_public/inst/labs/lab4")
 
   base.file       <- "GOA_fit_base.csv"
   diet.file       <- "GOA_fit_diet.csv"
@@ -18,6 +18,13 @@
   scene0   <- rsim.scenario(balanced, unbalanced, years=1950:2049)
   run0     <- rsim.run(scene0,method="AB",1950:2015)
   rsim.plot(run0)
+  
+  # Show predprey parameter table
+  get.rsim.predprey(scene0,"P.Cod")
+
+  # Show parameter effects
+  runRpathShiny("lab3")
+  
   
   scene1 <- scene0
 
@@ -63,6 +70,12 @@
   rsim.plot.biomass(scene1,run1,"W.Pollock")
 
 
+  # Show Cod Ration figure - bottom up control is key?
+
+  # Show forcing method (state space)
+  
+  
+  
 # A mini Management Strategy Evaluation run
   # First get an unfished ecosystem state for reference
   scene.unfished <- adjust.fishing(scene0, "ForcedEffort", "Fishery", sim.year = 1950:2049, value=0)   
