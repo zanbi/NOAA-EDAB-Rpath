@@ -40,7 +40,6 @@ Modifies the various forcing parameters of the rsim scenario object.
 \seealso{
 Other Rpath functions: 
 \code{\link{MTI}()},
-\code{\link{RsimEndpoints}},
 \code{\link{adjust.fishing}()},
 \code{\link{adjust.scenario}()},
 \code{\link{check.rpath.params}()},

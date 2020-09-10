@@ -20,7 +20,6 @@ Creates a list object with node specific data using Rsim.output object.
 \seealso{
 Other Rpath functions: 
 \code{\link{MTI}()},
-\code{\link{RsimEndpoints}},
 \code{\link{adjust.fishing}()},
 \code{\link{adjust.forcing}()},
 \code{\link{adjust.scenario}()},
