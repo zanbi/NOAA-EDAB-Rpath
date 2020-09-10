@@ -60,6 +60,7 @@ Plots the food web associated with an Rpath object.
 \seealso{
 Other Rpath functions: 
 \code{\link{MTI}()},
+\code{\link{RsimEndpoints}},
 \code{\link{adjust.fishing}()},
 \code{\link{adjust.forcing}()},
 \code{\link{adjust.scenario}()},
@@ -68,6 +69,7 @@ Other Rpath functions:
 \code{\link{extract.node}()},
 \code{\link{frate.table}()},
 \code{\link{read.rpath.params}()},
+\code{\link{rpath.groups}()},
 \code{\link{rpath.stanzas}()},
 \code{\link{rpath}()},
 \code{\link{rsim.params}()},

@@ -18,6 +18,7 @@ Creates a table of fishing mortalities by species group and gear for an Rpath.si
 \seealso{
 Other Rpath functions: 
 \code{\link{MTI}()},
+\code{\link{RsimEndpoints}},
 \code{\link{adjust.fishing}()},
 \code{\link{adjust.forcing}()},
 \code{\link{adjust.scenario}()},
@@ -25,6 +26,7 @@ Other Rpath functions:
 \code{\link{create.rpath.params}()},
 \code{\link{extract.node}()},
 \code{\link{read.rpath.params}()},
+\code{\link{rpath.groups}()},
 \code{\link{rpath.stanzas}()},
 \code{\link{rpath}()},
 \code{\link{rsim.params}()},

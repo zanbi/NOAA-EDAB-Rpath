@@ -36,6 +36,7 @@ Modifies the fishing mortality value for a species by a particular gear.
 \seealso{
 Other Rpath functions: 
 \code{\link{MTI}()},
+\code{\link{RsimEndpoints}},
 \code{\link{adjust.forcing}()},
 \code{\link{adjust.scenario}()},
 \code{\link{check.rpath.params}()},
@@ -43,6 +44,7 @@ Other Rpath functions:
 \code{\link{extract.node}()},
 \code{\link{frate.table}()},
 \code{\link{read.rpath.params}()},
+\code{\link{rpath.groups}()},
 \code{\link{rpath.stanzas}()},
 \code{\link{rpath}()},
 \code{\link{rsim.params}()},
