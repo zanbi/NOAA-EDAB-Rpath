@@ -123,18 +123,18 @@ rsim.fit.obj <- function(SIM,RES,verbose=TRUE){
   }
   
   # Catch compared (assumes all catch is clean, absolute values)
-  est <- RES$annual_Catch[matrix(c(as.character(SIM$fitting$Catch$Year),as.character(SIM$fitting$Catch$Group)),
-                              ncol=2)] + epsilon
-  obs <- SIM$fitting$Catch$obs + epsilon
-  sd  <- SIM$fitting$Catch$sd  + epsilon
-  sdlog  <- sqrt(log(1.0+sd*sd/(obs*obs)))
-  sdiff  <- (log(obs)-log(est))/sdlog
-  fit    <- SIM$fitting$Catch$wt * (log(sdlog) + FLOGTWOPI + 0.5*sdiff*sdiff)
-  if (verbose){
-    OBJ$Catch <- cbind(SIM$fitting$Catch,est,sdiff,fit)
-  } else {
-    OBJ$tot <- OBJ$tot + sum(fit)
-  }
+#  est <- RES$annual_Catch[matrix(c(as.character(SIM$fitting$Catch$Year),as.character(SIM$fitting$Catch$Group)),
+#                              ncol=2)] + epsilon
+#  obs <- SIM$fitting$Catch$obs + epsilon
+#  sd  <- SIM$fitting$Catch$sd  + epsilon
+#  sdlog  <- sqrt(log(1.0+sd*sd/(obs*obs)))
+#  sdiff  <- (log(obs)-log(est))/sdlog
+#  fit    <- SIM$fitting$Catch$wt * (log(sdlog) + FLOGTWOPI + 0.5*sdiff*sdiff)
+#  if (verbose){
+#    OBJ$Catch <- cbind(SIM$fitting$Catch,est,sdiff,fit)
+#  } else {
+#    OBJ$tot <- OBJ$tot + sum(fit)
+#  }
   
   # # RATION
   # obs <- SIM$fitting$ration$obs + epsilon
