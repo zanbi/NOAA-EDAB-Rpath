@@ -201,7 +201,7 @@ get.rsim.stanzas<-function(Rsim.scenario){
 adjust.forcing <- function(Rsim.scenario, parameter, group, sim.year = 1, sim.month = 0, 
                            bymonth = F, value){
   #Check that parameter and group exist
-  if(!parameter %in% c('ForcedPrey', 'ForcedMort', 'ForcedRecs', 'ForcedSearch', 
+  if(!parameter %in% c('ForcedPrey', 'ForcedMort', 'ForcedRecs', 'ForcedSearch', 'ForcedActresp', 
                        'ForcedMigrate', 'ForcedBio')){stop("Forcing parameter not found")}
   if(!all(group %in% Rsim.scenario$params$spname)){
     stop("Groups not found:",group[!(group %in% Rsim.scenario$params$spname)])

@@ -188,6 +188,7 @@ rsim.forcing <- function(params, years){
                   ForcedMort    = MF, 
                   ForcedRecs    = MF, 
                   ForcedSearch  = MF,
+                  ForcedActresp = MF,
                   ForcedMigrate = MF * 0,
                   ForcedBio     = MF * -1)
   
